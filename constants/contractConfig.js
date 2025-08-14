@@ -5,23 +5,23 @@ export const CONTRACT_CONFIG = {
     MAINNET: {
       id: 1,
       name: 'Ethereum Mainnet',
-      rpcUrl: 'https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID',
+      rpcUrl: `https://mainnet.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_ID}`,
       explorerUrl: 'https://etherscan.io',
-      foundryUrl: 'https://eth-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY'
+      foundryUrl: `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY}`
     },
     GOERLI: {
       id: 5,
       name: 'Goerli Testnet', 
-      rpcUrl: 'https://goerli.infura.io/v3/YOUR_INFURA_PROJECT_ID',
+      rpcUrl: `https://goerli.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_ID}`,
       explorerUrl: 'https://goerli.etherscan.io',
-      foundryUrl: 'https://eth-goerli.g.alchemy.com/v2/YOUR_ALCHEMY_KEY'
+      foundryUrl: `https://eth-goerli.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY}`
     },
     SEPOLIA: {
       id: 11155111,
       name: 'Sepolia Testnet',
-      rpcUrl: 'https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID', 
+      rpcUrl: `https://sepolia.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_ID}`, 
       explorerUrl: 'https://sepolia.etherscan.io',
-      foundryUrl: 'https://eth-sepolia.g.alchemy.com/v2/YOUR_ALCHEMY_KEY'
+      foundryUrl: `https://eth-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY}`
     },
     POLYGON: {
       id: 137,
@@ -87,6 +87,42 @@ export const CONTRACT_CONFIG = {
       EVENT_RSVP: null
     }
   },
+    // Contract Address for Event RSVP
+    CONTRACT_ADDRESS: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
+    CONTRACT_ABI: [
+      {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"eventId","type":"uint256"},{"indexed":true,"internalType":"address","name":"attendee","type":"address"},{"indexed":false,"internalType":"bool","name":"attended","type":"bool"}],"name":"AttendanceMarked","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"eventId","type":"uint256"},{"indexed":true,"internalType":"address","name":"organizer","type":"address"},{"indexed":false,"internalType":"string","name":"name","type":"string"},{"indexed":false,"internalType":"uint256","name":"eventTimestamp","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"maxAttendees","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"depositAmount","type":"uint256"}],"name":"EventCreated","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"eventId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"totalDepositsDistributed","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"noShowCount","type":"uint256"}],"name":"EventFinalized","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"eventId","type":"uint256"},{"indexed":true,"internalType":"address","name":"attendee","type":"address"},{"indexed":false,"internalType":"uint256","name":"refundAmount","type":"uint256"}],"name":"RSVPCancelled","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"eventId","type":"uint256"},{"indexed":true,"internalType":"address","name":"attendee","type":"address"},{"indexed":false,"internalType":"uint256","name":"depositAmount","type":"uint256"}],"name":"RSVPConfirmed","type":"event"},
+      {"stateMutability":"payable","type":"fallback"},
+      {"inputs":[],"name":"CANCELLATION_PERIOD","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"MAX_DEPOSIT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"MIN_DEPOSIT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"_organizer","type":"address"}],"name":"addOrganizer","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"}],"name":"cancelRSVP","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"string","name":"_name","type":"string"},{"internalType":"string","name":"_description","type":"string"},{"internalType":"uint256","name":"_eventTimestamp","type":"uint256"},{"internalType":"string","name":"_location","type":"string"},{"internalType":"uint256","name":"_maxAttendees","type":"uint256"},{"internalType":"uint256","name":"_depositAmount","type":"uint256"}],"name":"createEvent","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"}],"name":"deactivateEvent","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[],"name":"emergencyWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"}],"name":"eventAttendees","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"address","name":"","type":"address"}],"name":"eventRSVPs","outputs":[{"internalType":"address","name":"attendee","type":"address"},{"internalType":"uint256","name":"depositAmount","type":"uint256"},{"internalType":"bool","name":"hasAttended","type":"bool"},{"internalType":"bool","name":"isRefunded","type":"bool"},{"internalType":"uint256","name":"rsvpTimestamp","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"events","outputs":[{"internalType":"uint256","name":"id","type":"uint256"},{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"description","type":"string"},{"internalType":"uint256","name":"eventTimestamp","type":"uint256"},{"internalType":"string","name":"location","type":"string"},{"internalType":"uint256","name":"maxAttendees","type":"uint256"},{"internalType":"uint256","name":"depositAmount","type":"uint256"},{"internalType":"address","name":"organizer","type":"address"},{"internalType":"bool","name":"isActive","type":"bool"},{"internalType":"bool","name":"isFinalized","type":"bool"},{"internalType":"uint256","name":"totalRSVPs","type":"uint256"},{"internalType":"uint256","name":"totalAttended","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"}],"name":"finalizeEvent","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"}],"name":"getEvent","outputs":[{"components":[{"internalType":"uint256","name":"id","type":"uint256"},{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"description","type":"string"},{"internalType":"uint256","name":"eventTimestamp","type":"uint256"},{"internalType":"string","name":"location","type":"string"},{"internalType":"uint256","name":"maxAttendees","type":"uint256"},{"internalType":"uint256","name":"depositAmount","type":"uint256"},{"internalType":"address","name":"organizer","type":"address"},{"internalType":"bool","name":"isActive","type":"bool"},{"internalType":"bool","name":"isFinalized","type":"bool"},{"internalType":"uint256","name":"totalRSVPs","type":"uint256"},{"internalType":"uint256","name":"totalAttended","type":"uint256"}],"internalType":"struct EventRSVP.Event","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"}],"name":"getEventAttendees","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"getEventCount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"_user","type":"address"}],"name":"getUserEvents","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"},{"internalType":"address","name":"_user","type":"address"}],"name":"getUserRSVP","outputs":[{"components":[{"internalType":"address","name":"attendee","type":"address"},{"internalType":"uint256","name":"depositAmount","type":"uint256"},{"internalType":"bool","name":"hasAttended","type":"bool"},{"internalType":"bool","name":"isRefunded","type":"bool"},{"internalType":"uint256","name":"rsvpTimestamp","type":"uint256"}],"internalType":"struct EventRSVP.RSVP","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"},{"internalType":"address","name":"_user","type":"address"}],"name":"hasUserRSVPed","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"},{"internalType":"address","name":"_attendee","type":"address"}],"name":"markAttendance","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"organizers","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"_organizer","type":"address"}],"name":"removeOrganizer","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"}],"name":"rsvpToEvent","outputs":[],"stateMutability":"payable","type":"function"},
+      {"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"}],"name":"userEvents","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"stateMutability":"payable","type":"receive"}
+    ],
 
   // Foundry Configuration
   FOUNDRY_CONFIG: {
@@ -225,4 +261,39 @@ export const isNetworkSupported = (networkId) => {
   return Object.values(CONTRACT_CONFIG.NETWORKS).some(network => network.id === networkId);
 };
 
+export const CONTRACT_ADDRESS = "0x6468f960f997b5b76b696d4632d648a4398310c6";
+export const CONTRACT_ABI = [
+  {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
+  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"eventId","type":"uint256"},{"indexed":true,"internalType":"address","name":"attendee","type":"address"},{"indexed":false,"internalType":"bool","name":"attended","type":"bool"}],"name":"AttendanceMarked","type":"event"},
+  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"eventId","type":"uint256"},{"indexed":true,"internalType":"address","name":"organizer","type":"address"},{"indexed":false,"internalType":"string","name":"name","type":"string"},{"indexed":false,"internalType":"uint256","name":"eventTimestamp","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"maxAttendees","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"depositAmount","type":"uint256"}],"name":"EventCreated","type":"event"},
+  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"eventId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"totalDepositsDistributed","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"noShowCount","type":"uint256"}],"name":"EventFinalized","type":"event"},
+  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"eventId","type":"uint256"},{"indexed":true,"internalType":"address","name":"attendee","type":"address"},{"indexed":false,"internalType":"uint256","name":"refundAmount","type":"uint256"}],"name":"RSVPCancelled","type":"event"},
+  {"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"eventId","type":"uint256"},{"indexed":true,"internalType":"address","name":"attendee","type":"address"},{"indexed":false,"internalType":"uint256","name":"depositAmount","type":"uint256"}],"name":"RSVPConfirmed","type":"event"},
+  {"stateMutability":"payable","type":"fallback"},
+  {"inputs":[],"name":"CANCELLATION_PERIOD","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[],"name":"MAX_DEPOSIT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[],"name":"MIN_DEPOSIT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"address","name":"_organizer","type":"address"}],"name":"addOrganizer","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"}],"name":"cancelRSVP","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"internalType":"string","name":"_name","type":"string"},{"internalType":"string","name":"_description","type":"string"},{"internalType":"uint256","name":"_eventTimestamp","type":"uint256"},{"internalType":"string","name":"_location","type":"string"},{"internalType":"uint256","name":"_maxAttendees","type":"uint256"},{"internalType":"uint256","name":"_depositAmount","type":"uint256"}],"name":"createEvent","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"}],"name":"deactivateEvent","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[],"name":"emergencyWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"}],"name":"eventAttendees","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"address","name":"","type":"address"}],"name":"eventRSVPs","outputs":[{"internalType":"address","name":"attendee","type":"address"},{"internalType":"uint256","name":"depositAmount","type":"uint256"},{"internalType":"bool","name":"hasAttended","type":"bool"},{"internalType":"bool","name":"isRefunded","type":"bool"},{"internalType":"uint256","name":"rsvpTimestamp","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"events","outputs":[{"internalType":"uint256","name":"id","type":"uint256"},{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"description","type":"string"},{"internalType":"uint256","name":"eventTimestamp","type":"uint256"},{"internalType":"string","name":"location","type":"string"},{"internalType":"uint256","name":"maxAttendees","type":"uint256"},{"internalType":"uint256","name":"depositAmount","type":"uint256"},{"internalType":"address","name":"organizer","type":"address"},{"internalType":"bool","name":"isActive","type":"bool"},{"internalType":"bool","name":"isFinalized","type":"bool"},{"internalType":"uint256","name":"totalRSVPs","type":"uint256"},{"internalType":"uint256","name":"totalAttended","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"}],"name":"finalizeEvent","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"}],"name":"getEvent","outputs":[{"components":[{"internalType":"uint256","name":"id","type":"uint256"},{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"description","type":"string"},{"internalType":"uint256","name":"eventTimestamp","type":"uint256"},{"internalType":"string","name":"location","type":"string"},{"internalType":"uint256","name":"maxAttendees","type":"uint256"},{"internalType":"uint256","name":"depositAmount","type":"uint256"},{"internalType":"address","name":"organizer","type":"address"},{"internalType":"bool","name":"isActive","type":"bool"},{"internalType":"bool","name":"isFinalized","type":"bool"},{"internalType":"uint256","name":"totalRSVPs","type":"uint256"},{"internalType":"uint256","name":"totalAttended","type":"uint256"}],"internalType":"struct EventRSVP.Event","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"}],"name":"getEventAttendees","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},
+  {"inputs":[],"name":"getEventCount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"address","name":"_user","type":"address"}],"name":"getUserEvents","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"},{"internalType":"address","name":"_user","type":"address"}],"name":"getUserRSVP","outputs":[{"components":[{"internalType":"address","name":"attendee","type":"address"},{"internalType":"uint256","name":"depositAmount","type":"uint256"},{"internalType":"bool","name":"hasAttended","type":"bool"},{"internalType":"bool","name":"isRefunded","type":"bool"},{"internalType":"uint256","name":"rsvpTimestamp","type":"uint256"}],"internalType":"struct EventRSVP.RSVP","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"},{"internalType":"address","name":"_user","type":"address"}],"name":"hasUserRSVPed","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"},{"internalType":"address","name":"_attendee","type":"address"}],"name":"markAttendance","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"organizers","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+  {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"internalType":"address","name":"_organizer","type":"address"}],"name":"removeOrganizer","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"internalType":"uint256","name":"_eventId","type":"uint256"}],"name":"rsvpToEvent","outputs":[],"stateMutability":"payable","type":"function"},
+  {"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"}],"name":"userEvents","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"stateMutability":"payable","type":"receive"}
+];
 export default CONTRACT_CONFIG;

@@ -3,13 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWallet } from '../../hooks/useWallet';
-import { mockEvents } from '../../utils/mockData';
+import { getContract } from '../../utils/contract';
+import { ethers } from 'ethers';
 import WalletConnect from '../../components/WalletConnect';
 import { formatAddress } from '../../utils/web3';
+import CreateEventForm from '../../components/CreateEventForm';
 
 export default function AdminPage() {
   const router = useRouter();
-  const { account, isAdmin, isMetaMaskInstalled } = useWallet();
+  const { account, isMetaMaskInstalled } = useWallet();
+  const ADMIN_ADDRESS = "0xb05542907644713d95004f9e5984fcb706165937";
+  const isAdmin = account && account.toLowerCase() === ADMIN_ADDRESS.toLowerCase();
   const [events, setEvents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEventId, setFilterEventId] = useState('all');
@@ -17,44 +21,63 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [allAttendees, setAllAttendees] = useState([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
         setIsLoading(true);
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        setEvents(mockEvents);
-        
-        // Flatten all attendees with event info
-        const attendeesWithEvent = [];
-        mockEvents.forEach(event => {
-          event.attendees.forEach(attendee => {
-            attendeesWithEvent.push({
-              ...attendee,
-              eventId: event.id,
-              eventName: event.name,
-              eventDate: event.date,
-              eventLocation: event.location,
-              depositAmount: event.depositAmount
+        if (window.ethereum) {
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
+          const contract = getContract(signer);
+          const eventCount = await contract.getEventCount();
+          const eventsArr = [];
+          for (let i = 0; i < Number(eventCount); i++) {
+            const event = await contract.events(i);
+            eventsArr.push({
+              id: Number(event[0]),
+              name: event[1],
+              description: event[2],
+              date: new Date(Number(event[3]) * 1000).toISOString().slice(0, 10),
+              location: event[4],
+              maxAttendees: Number(event[5]),
+              depositAmount: ethers.formatEther(BigInt(event[6].toString())),
+              organizer: event[7],
+              isActive: event[8],
+              isFinalized: event[9],
+              totalRSVPs: Number(event[10]),
+              totalAttended: Number(event[11]),
+              category: '',
+              attendees: [],
+              currentAttendees: 0
             });
-          });
-        });
-        setAllAttendees(attendeesWithEvent);
-        
+          }
+          setEvents(eventsArr);
+        }
       } catch (err) {
         console.error('Error fetching events:', err);
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchEvents();
-  }, []);
+  }, [account]);
 
-  // Remove auto redirect - let users see the page and choose to leave manually
+  // Only show admin dashboard if isAdmin is true
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-md p-8 text-center">
+          <h2 className="text-2xl font-bold mb-4">Admin Access Required</h2>
+          <p className="mb-4">You must be logged in as the contract owner to view the admin dashboard.</p>
+          <WalletConnect />
+        </div>
+      </div>
+    );
+  }
 
   const handleAttendanceToggle = async (attendeeId, eventId) => {
     setIsUpdating(true);
@@ -126,6 +149,11 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {showCreateForm && (
+            <div className="mb-8">
+              <CreateEventForm />
+            </div>
+          )}
           <div className="animate-pulse">
             <div className="bg-white rounded-lg shadow-md border border-gray-200 p-8 mb-8">
               <div className="h-8 bg-gray-300 rounded mb-4 w-1/3"></div>
@@ -205,8 +233,19 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div>
+      <div className="max-w-2xl mx-auto mt-4 mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+        <div><strong>Connected Wallet:</strong> {account || 'Not connected'}</div>
+        <div><strong>Admin Address:</strong> {ADMIN_ADDRESS}</div>
+        <div><strong>Admin Status:</strong> {isAdmin ? 'You are admin' : 'Not admin'}</div>
+      </div>
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {showCreateForm && (
+          <div className="mb-8">
+            <CreateEventForm onSubmit={() => setShowCreateForm(false)} />
+          </div>
+        )}
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md border border-gray-200 mb-8 overflow-hidden">
           <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-8 py-6 text-white">
@@ -219,6 +258,12 @@ export default function AdminPage() {
                   <span className="bg-green-500 text-white text-sm font-medium px-3 py-1 rounded-full">
                     All Events
                   </span>
+                  <button
+                    onClick={() => setShowCreateForm(!showCreateForm)}
+                    className="bg-white/20 hover:bg-white/30 text-white text-sm font-medium px-4 py-1 rounded-full transition-colors flex items-center gap-2"
+                  >
+                    <span>{showCreateForm ? 'Close Form' : '+ Create Event'}</span>
+                  </button>
                 </div>
                 <h1 className="text-3xl font-bold mb-2">Event Management System</h1>
                 <p className="text-purple-100">Manage all events and attendees from one central dashboard</p>
@@ -256,6 +301,71 @@ export default function AdminPage() {
               <div className="text-2xl font-bold text-purple-600">{attendanceRate.toFixed(1)}%</div>
               <div className="text-sm text-purple-600">Overall Attendance Rate</div>
             </div>
+          </div>
+        </div>
+
+        {/* Event List */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">All Events</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {events.map((event) => (
+              <div key={event.id} className="bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">{event.name}</h3>
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                      event.isActive 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {event.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 mb-4 line-clamp-2">{event.description}</p>
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center text-sm text-gray-500">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      {formatDate(event.date)}
+                    </div>
+                    <div className="flex items-center text-sm text-gray-500">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      {event.location}
+                    </div>
+                    <div className="flex items-center text-sm text-gray-500">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      {event.totalRSVPs}/{event.maxAttendees} RSVPs
+                    </div>
+                    <div className="flex items-center text-sm text-gray-500">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {event.depositAmount} ETH deposit
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => router.push(`/event/${event.id}`)}
+                      className="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      View Details
+                    </button>
+                    <button
+                      onClick={() => router.push(`/admin/${event.id}`)}
+                      className="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-600 px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Manage Event
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -415,6 +525,7 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }

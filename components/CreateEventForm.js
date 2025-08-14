@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from "react";
+import { ethers } from "ethers";
+import { getContract } from "../utils/contract";
 import TimeSelect from './TimeSelect';
 
 export default function CreateEventForm({ onSubmit, isSubmitting = false }) {
@@ -19,6 +21,7 @@ export default function CreateEventForm({ onSubmit, isSubmitting = false }) {
 
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [status, setStatus] = useState("");
 
   const categories = [
     'Technology',
@@ -93,7 +96,7 @@ export default function CreateEventForm({ onSubmit, isSubmitting = false }) {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validate all fields
@@ -107,7 +110,48 @@ export default function CreateEventForm({ onSubmit, isSubmitting = false }) {
     setTouched(Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
 
     if (Object.keys(newErrors).length === 0) {
-      onSubmit(formData);
+      setStatus("Submitting...");
+      try {
+        if (!window.ethereum) {
+          setStatus("Please connect your wallet.");
+          return;
+        }
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const contract = getContract(signer);
+
+        // Convert date to unix timestamp
+        const eventTimestamp = Math.floor(new Date(formData.date).getTime() / 1000);
+        // Convert deposit amount to wei
+        const depositAmountWei = ethers.parseEther(formData.depositAmount);
+
+        const tx = await contract.createEvent(
+          formData.name,
+          formData.description,
+          eventTimestamp,
+          formData.location,
+          Number(formData.maxAttendees),
+          depositAmountWei
+        );
+        setStatus("Transaction sent. Waiting for confirmation...");
+        await tx.wait();
+        setStatus("Event created successfully!");
+        setFormData({
+          name: '',
+          date: '',
+          startTime: '',
+          endTime: '',
+          location: '',
+          depositAmount: '',
+          maxAttendees: '',
+          description: '',
+          organizer: '',
+          category: 'Technology'
+        });
+      } catch (err) {
+        setStatus("Error: " + (err?.message || "Transaction failed."));
+      }
     }
   };
 
@@ -360,6 +404,7 @@ export default function CreateEventForm({ onSubmit, isSubmitting = false }) {
             {isSubmitting ? 'Creating Event...' : 'Create Event'}
           </button>
         </div>
+        {status && <div className="mt-4 text-sm">{status}</div>}
       </form>
     </div>
   );

@@ -6,13 +6,12 @@ import { useAppState, useAppActions } from '../context/AppContext';
 import { useNotifications } from './NotificationSystem';
 import Button from './ui/Button';
 import Modal, { ConfirmDialog } from './ui/Modal';
+import contractService from '../utils/contract';
 import { 
   isUserRSVPed, 
   getUserAttendeeInfo, 
   formatCurrency, 
-  generateTransactionHash,
-  simulateDelay,
-  simulateError 
+  generateTransactionHash
 } from '../utils/helpers';
 import emailService from '../utils/emailService';
 
@@ -50,19 +49,34 @@ const RSVPButton = ({ event, size = 'md', fullWidth = false }) => {
       return;
     }
 
+    if (!account) {
+      notifications.error('Wallet Required', 'Please connect your wallet to RSVP');
+      return;
+    }
+
+    if (isEventFull) {
+      notifications.error('Event Full', 'This event has reached its capacity');
+      return;
+    }
+
     setIsProcessing(true);
     
     try {
-      // Simulate blockchain transaction
-      notifications.info('Processing RSVP', 'Confirming transaction on blockchain...');
-      await simulateDelay(2000, 4000);
+      // Initialize contract
+      await contractService.init();
       
-      // Simulate transaction failure (5% chance)
-      if (simulateError(0.05)) {
+      notifications.info('Processing RSVP', 'Please confirm the transaction in your wallet...');
+      
+      // Make the actual contract call
+      const { success, hash } = await contractService.rsvpToEvent(
+        event.id,
+        event.depositAmount
+      );
+
+      if (!success) {
         throw new Error('Transaction failed. Please try again.');
       }
 
-      const transactionHash = generateTransactionHash();
       const timestamp = new Date().toISOString();
       
       // Create attendee object
@@ -73,19 +87,42 @@ const RSVPButton = ({ event, size = 'md', fullWidth = false }) => {
         email: userEmail.trim(),
         timestamp,
         hasAttended: false,
-        transactionHash
+        transactionHash: hash
       };
 
-      // Add RSVP to state
-      addRSVP(event.id, newAttendee);
-      
-      // Update event capacity
+      // First update the event to ensure it's still available
       const updatedEvent = {
         ...event,
-        currentAttendees: event.currentAttendees + 1,
-        attendees: [...event.attendees, newAttendee]
+        currentAttendees: (event.currentAttendees || 0) + 1,
+        attendees: [...(event.attendees || []), newAttendee]
       };
-      updateEvent(updatedEvent);
+
+      // Check if event is still available
+      if (updatedEvent.currentAttendees > updatedEvent.maxAttendees) {
+        throw new Error('Event is now full');
+      }
+
+      // Update event first
+      await updateEvent(updatedEvent);
+
+      // Then add RSVP to state
+      await addRSVP(event.id, newAttendee);
+
+      // Update localStorage to persist the change
+      if (typeof window !== 'undefined') {
+        try {
+          const appState = JSON.parse(localStorage.getItem('appState') || '{}');
+          const updatedState = {
+            ...appState,
+            events: (appState.events || []).map(e => 
+              e.id === event.id ? updatedEvent : e
+            )
+          };
+          localStorage.setItem('appState', JSON.stringify(updatedState));
+        } catch (error) {
+          console.error('Failed to update localStorage:', error);
+        }
+      }
 
       // Send confirmation email
       try {
@@ -121,16 +158,13 @@ const RSVPButton = ({ event, size = 'md', fullWidth = false }) => {
     setIsProcessing(true);
     
     try {
-      // Simulate refund transaction
-      notifications.info('Processing Cancellation', 'Processing refund transaction...');
-      await simulateDelay(1500, 3000);
+      // Initialize contract
+      await contractService.init();
       
-      // Simulate transaction failure (3% chance)
-      if (simulateError(0.03)) {
-        throw new Error('Refund transaction failed. Please try again.');
-      }
-
-      const refundHash = generateTransactionHash();
+      notifications.info('Processing Cancellation', 'Please confirm the cancellation in your wallet...');
+      
+      // Make the actual contract call to cancel RSVP
+      const { success, hash: refundHash } = await contractService.cancelRSVP(event.id);
       
       // Remove RSVP from state
       removeRSVP(event.id, account);

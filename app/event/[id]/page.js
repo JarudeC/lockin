@@ -105,7 +105,7 @@ export default function EventDetailPage() {
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    {formatTimeRange(event.startTime, event.endTime)}
+                    {event.startTime && event.endTime ? formatTimeRange(event.startTime, event.endTime) : 'Time not specified'}
                   </div>
                   <div className="flex items-center">
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,7 +120,7 @@ export default function EventDetailPage() {
               <div className="flex flex-col items-end gap-3">
                 <div className="text-right">
                   <div className="text-2xl font-bold">
-                    {event.currentAttendees}/{event.maxAttendees}
+                    {event.currentAttendees !== undefined ? event.currentAttendees : 0}/{event.maxAttendees}
                   </div>
                   <div className="text-sm text-indigo-200">attendees</div>
                 </div>
@@ -155,7 +155,7 @@ export default function EventDetailPage() {
                     <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <dt className="text-sm font-medium text-gray-500">Date & Time</dt>
-                        <dd className="text-sm text-gray-900">{formatDate(event.date)} • {formatTimeRange(event.startTime, event.endTime)}</dd>
+                        <dd className="text-sm text-gray-900">{formatDate(event.date)} • {event.startTime && event.endTime ? formatTimeRange(event.startTime, event.endTime) : 'Time not specified'}</dd>
                       </div>
                       <div>
                         <dt className="text-sm font-medium text-gray-500">Location</dt>

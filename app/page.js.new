@@ -1,9 +1,6 @@
 'use client';
-
-import { formatEther } from 'ethers';
+import EventCount from '../components/EventCount';
 import { useState, useEffect } from 'react';
-import { ethers } from 'ethers';
-import { getContract } from '../utils/contract';
 import Link from 'next/link';
 import EventCard from '../components/EventCard';
 import { CardSkeleton } from '../components/LoadingSpinner';
@@ -15,42 +12,34 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
     async function fetchEvents() {
+      if (typeof window === 'undefined') return;
+      
       setIsEventsLoading(true);
       try {
-        if (window.ethereum) {
-          await window.ethereum.request({ method: 'eth_requestAccounts' });
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const contract = getContract(provider);
-          const eventCount = await contract.getEventCount();
-          const eventsArr = [];
-          for (let i = 0; i < Number(eventCount); i++) {
-            const event = await contract.events(i);
-            // Only log the event object for debugging
-            console.log('Fetched event:', event);
-            eventsArr.push({
-              id: Number(event[0]),
-              name: event[1],
-              description: event[2],
-              date: new Date(Number(event[3]) * 1000).toISOString().slice(0, 10),
-              location: event[4],
-              maxAttendees: Number(event[5]),
-              depositAmount: formatEther(BigInt(event[6].toString())),
-              organizer: event[7],
-              isActive: event[8],
-              isFinalized: event[9],
-              totalRSVPs: Number(event[10]),
-              totalAttended: Number(event[11]),
-              category: '', // Add if you have category in contract
-              attendees: [], // Always provide an array for attendees
-              currentAttendees: 0 // Default to 0 if not available
-            });
-          }
-          setEvents(eventsArr);
-        }
-      } catch (err) {
-        console.error('Error fetching events:', err);
+        const { contractService } = await import('../utils/contract');
+        await contractService.init();
+        const fetchedEvents = await contractService.getAllEvents();
+        const formattedEvents = fetchedEvents.map(event => ({
+          id: event.id,
+          name: event.name,
+          description: event.description,
+          date: new Date(event.timestamp * 1000).toISOString().slice(0, 10),
+          location: event.location,
+          maxAttendees: event.maxAttendees,
+          depositAmount: event.deposit,
+          organizer: event.owner,
+          isActive: !event.isFinalized,
+          isFinalized: event.isFinalized,
+          totalRSVPs: event.currentAttendees,
+          totalAttended: event.currentAttendees,
+          category: '',
+          attendees: [],
+          currentAttendees: event.currentAttendees
+        }));
+        setEvents(formattedEvents);
+      } catch (error) {
+        console.error('Error fetching events:', error);
       } finally {
         setIsEventsLoading(false);
       }

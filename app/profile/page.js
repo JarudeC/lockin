@@ -18,6 +18,14 @@ export default function ProfilePage() {
   const { user } = useAppState();
   const { setUser } = useAppActions();
   const notifications = useNotifications();
+  const ADMIN_ADDRESS = "0xb05542907644713d95004f9e5984fcb706165937";
+  
+  useEffect(() => {
+    // Only redirect if the user is an admin and explicitly navigated to /profile
+    if (account && account.toLowerCase() === ADMIN_ADDRESS.toLowerCase() && window.location.pathname === '/profile') {
+      router.push('/admin');
+    }
+  }, [account, router]);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -30,6 +38,9 @@ export default function ProfilePage() {
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  const [userEvents, setUserEvents] = useState([]);
+
+  // Update form when user data changes
   useEffect(() => {
     if (user) {
       setEditForm({
@@ -42,6 +53,24 @@ export default function ProfilePage() {
       });
     }
   }, [user]);
+
+  // Fetch user's RSVPed events when account changes
+  useEffect(() => {
+    if (account) {
+      const state = typeof window !== 'undefined' 
+        ? JSON.parse(localStorage.getItem('appState') || '{}') 
+        : {};
+      
+      const allEvents = state.events || [];
+      const userRsvpedEvents = allEvents.filter(event => 
+        event.attendees?.some(attendee => 
+          attendee.address?.toLowerCase() === account?.toLowerCase()
+        )
+      );
+      
+      setUserEvents(userRsvpedEvents);
+    }
+  }, [account]);
 
   const handleSaveProfile = async () => {
     if (!editForm.email.trim()) {

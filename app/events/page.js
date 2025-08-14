@@ -23,7 +23,28 @@ export default function AllEventsPage() {
   const router = useRouter();
   const { account, isAdmin } = useWallet();
   const { events, isEventsLoading } = useAppState();
-  const { updateEvent, deleteEvent } = useAppActions();
+  const { updateEvent, deleteEvent, setEvents, setEventsLoading } = useAppActions();
+
+  // Load events when account changes
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setEventsLoading(true);
+        const { contractService } = await import('../../utils/contract');
+        await contractService.init();
+        const fetchedEvents = await contractService.getAllEvents();
+        setEvents(fetchedEvents);
+      } catch (error) {
+        console.error('Failed to load events:', error);
+      } finally {
+        setEventsLoading(false);
+      }
+    };
+
+    if (account) {
+      fetchEvents();
+    }
+  }, [account, setEvents, setEventsLoading]);
   const notifications = useNotifications();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,13 +56,16 @@ export default function AllEventsPage() {
   const [deletingEvent, setDeletingEvent] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Redirect non-admin users
+  // Only redirect if we're in the admin section
   useEffect(() => {
-    if (!account) {
-      router.push('/profile');
-    } else if (account && !isAdmin) {
-      router.push('/profile');
-      notifications.warning('Admin Access Required', 'Redirected to your profile page');
+    const isAdminPath = window.location.pathname.startsWith('/admin');
+    if (isAdminPath) {
+      if (!account) {
+        router.push('/profile');
+      } else if (account && !isAdmin) {
+        router.push('/profile');
+        notifications.warning('Admin Access Required', 'Redirected to your profile page');
+      }
     }
   }, [account, isAdmin, router, notifications]);
 

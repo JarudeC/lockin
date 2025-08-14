@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef, useState } from 'react';
+import React from "react";
 
 const Input = forwardRef(({
   label,
@@ -22,7 +23,12 @@ const Input = forwardRef(({
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+  const [inputId, setInputId] = React.useState(id || "");
+  React.useEffect(() => {
+    if (!id) {
+      setInputId(`input-${Math.random().toString(36).substr(2, 9)}`);
+    }
+  }, [id]);
 
   const baseStyles = 'block w-full rounded-lg border transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1';
   
